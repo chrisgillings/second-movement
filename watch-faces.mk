@@ -5,7 +5,6 @@ SRCS += \
   ./watch-faces/clock/world_clock_face.c \
   ./watch-faces/clock/mars_time_face.c \
   ./watch-faces/clock/ish_face.c \
-  ./watch-faces/clock/minute_repeater_decimal_face.c \
   ./watch-faces/complication/alarm_face.c \
   ./watch-faces/complication/advanced_alarm_face.c \
   ./watch-faces/complication/countdown_face.c \
