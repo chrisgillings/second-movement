@@ -838,11 +838,10 @@ void movement_store_settings(void) {
 }
 
 void movement_store_location(void) {
+#if defined(MOVEMENT_DEFAULT_LATITUDE) && defined(MOVEMENT_DEFAULT_LONGITUDE)
     movement_location_t movement_location;
     movement_location_t current_location;
 
-#ifdef MOVEMENT_DEFAULT_LATITUDE
-#ifdef MOVEMENT_DEFAULT_LONGITUDE
     movement_location.bit.latitude = MOVEMENT_DEFAULT_LATITUDE;
     movement_location.bit.longitude = MOVEMENT_DEFAULT_LONGITUDE;
 
@@ -850,7 +849,6 @@ void movement_store_location(void) {
     if (current_location.reg == 0) {
         filesystem_write_file("location.u32", (char *) &movement_location.reg, sizeof(movement_location_t));
     }
-#endif
 #endif
 }
 
