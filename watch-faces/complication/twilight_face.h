@@ -66,7 +66,8 @@ typedef struct {
 typedef struct {
     double time;
     char custom_text[3];
-    char default_text[2];
+    char classic_text[2];
+    char seconds_text[2];
 } twilight_moment_t;
 
 void twilight_face_setup(uint8_t watch_face_index, void ** context_ptr);

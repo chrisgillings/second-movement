@@ -64,7 +64,6 @@ static void _twilight_set_expiration(twilight_state_t *state, watch_date_time_t 
     state->rise_set_expires = watch_utility_date_time_from_unix_time(timestamp + 60, 0);
 }
 
-// static uint8_t get_sun_time(uint8_t sun_index, double scratch_year, double scratch_month, double scratch_day, double lat, double lon, double *sun_time, char *custom_text[3], char *default_text[2]) {
 static uint8_t get_sun_time(uint8_t sun_index, watch_date_time_t scratch_time, double lat, double lon, twilight_moment_t *moment) {
     double scratch_year = scratch_time.unit.year + WATCH_RTC_REFERENCE_YEAR;
     double scratch_month = scratch_time.unit.month;
@@ -77,49 +76,49 @@ static uint8_t get_sun_time(uint8_t sun_index, watch_date_time_t scratch_time, d
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = dawn;
             strcpy(moment->custom_text, "aDn");
-            strcpy(moment->default_text, "aD");
+            strcpy(moment->classic_text, "aD");
             break;
         case 1:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = dawn;
             strcpy(moment->custom_text, "nDn");
-            strcpy(moment->default_text, "nD");
+            strcpy(moment->classic_text, "nD");
             break;
         case 2:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = dawn;
             strcpy(moment->custom_text, "cDn");
-            strcpy(moment->default_text, "cD");
+            strcpy(moment->classic_text, "cD");
             break;
         case 3:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = dawn;
             strcpy(moment->custom_text, "Ris");
-            strcpy(moment->default_text, "Ri");
+            strcpy(moment->classic_text, "Ri");
             break;
         case 4:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = twlt;
             strcpy(moment->custom_text, "Set");
-            strcpy(moment->default_text, "Se");
+            strcpy(moment->classic_text, "Se");
             break;
         case 5:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = twlt;
             strcpy(moment->custom_text, "cTw");
-            strcpy(moment->default_text, "cT");
+            strcpy(moment->classic_text, "cT");
             break;
         case 6:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = twlt;
             strcpy(moment->custom_text, "nTw");
-            strcpy(moment->default_text, "nT");
+            strcpy(moment->classic_text, "nT");
             break;
         case 7:
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
             moment->time = twlt;
             strcpy(moment->custom_text, "aTw");
-            strcpy(moment->default_text, "aT");
+            strcpy(moment->classic_text, "aT");
             break;
     }
     return result;
@@ -169,14 +168,14 @@ static void _twilight_face_update(twilight_state_t *state) {
 
         // get the time and text for the sun moment by index for the given day
         result = get_sun_time(state->rise_index, scratch_time, lat, lon, &moment);
-        // watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.default_text);
+        // watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
 
         if (result != 0) {
             // no time to display
             watch_clear_colon();
             watch_clear_indicator(WATCH_INDICATOR_PM);
             watch_clear_indicator(WATCH_INDICATOR_24H);
-            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.default_text);
+            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
             // if (result == 1) watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "SET", "SE");
             // else watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "RIS", "rI");
             sprintf(buf, "%2d", scratch_time.unit.day);
@@ -221,7 +220,7 @@ static void _twilight_face_update(twilight_state_t *state) {
                     if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
                     else watch_clear_indicator(WATCH_INDICATOR_PM);
                 }
-                watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.default_text);
+                watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
                 sprintf(buf, "%2d", scratch_time.unit.day);
                 watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
                 sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
@@ -232,10 +231,12 @@ static void _twilight_face_update(twilight_state_t *state) {
             }
         }
 
+        /*
         // it's after sunset. we need to display sunrise/sunset for tomorrow.
         uint32_t timestamp = watch_utility_date_time_to_unix_time(date_time, 0);
         timestamp += 86400;
         scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+        */
     }
 }
 
