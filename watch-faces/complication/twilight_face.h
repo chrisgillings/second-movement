@@ -26,13 +26,18 @@
 #define TWILIGHT_FACE_H_
 
 /*
- * SUNRISE & SUNSET FACE
+ * TWILIGHT AND DAWN FACE
  *
- * The Sunrise/Sunset face is designed to display the next twilights
- * for a given location. It also functions as an interface for setting the
+ * The Twilight face is designed to display the next eight twilight moments
+ * for a given location, in order from the current time.  From midnight, for instance:
+ *
+ *   Astronomical Dawn, Nautical Dawn, Civil Dawn and Sunrise
+ *   Astronomical Twilight, Nautical Twilight, Civil Twilight and Sunset
+ *
+ * It also functions as an interface for setting the
  * location register, which other watch faces can use for various purposes.
  *
- * Refer to the wiki for usage instructions:
+ * Refer to the wiki for usage instructions (once it is written):
  *  https://www.sensorwatch.net/docs/watchfaces/complication/#twilights
  */
 
