@@ -54,10 +54,10 @@ typedef struct {
 
 typedef struct {
     uint8_t page;
-    uint8_t rise_index;
+    uint8_t moment_index;
     uint8_t active_digit;
     bool location_changed;
-    watch_date_time_t rise_set_expires;
+    watch_date_time_t moment_expires;
     twilight_lat_lon_settings_t working_latitude;
     twilight_lat_lon_settings_t working_longitude;
     uint8_t longLatToUse;
@@ -82,5 +82,11 @@ void twilight_face_resign(void *context);
     twilight_face_resign, \
     NULL, \
 })
+
+// this constant must be greater than 12
+#define TWILIGHT_MAX_MOMENTS 16
+
+// debugging flag
+#define TWILIGHT_DEBUG false
 
 #endif // TWILIGHT_FACE_H_

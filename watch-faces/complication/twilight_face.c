@@ -40,6 +40,8 @@
 #include <emscripten.h>
 #endif
 
+static const uint8_t twilight_max_moments = TWILIGHT_MAX_MOMENTS;
+
 static const uint8_t _location_count = sizeof(longLatPresets) / sizeof(long_lat_presets_t);
 
 static void persist_location_to_filesystem(movement_location_t new_location) {
@@ -59,77 +61,81 @@ static movement_location_t load_location_from_filesystem() {
     return location;
 }
 
-static void _twilight_set_expiration(twilight_state_t *state, watch_date_time_t next_rise_set) {
-    uint32_t timestamp = watch_utility_date_time_to_unix_time(next_rise_set, 0);
-    state->rise_set_expires = watch_utility_date_time_from_unix_time(timestamp + 60, 0);
+static void _twilight_set_expiration(twilight_state_t *state, watch_date_time_t next_moment) {
+    uint32_t timestamp = watch_utility_date_time_to_unix_time(next_moment, 0);
+    state->moment_expires = watch_utility_date_time_from_unix_time(timestamp + 60, 0);
 }
 
-static uint8_t get_sun_time(uint8_t sun_index, watch_date_time_t scratch_time, double lat, double lon, twilight_moment_t *moment) {
+static uint8_t get_moment_time(uint8_t moment_index, watch_date_time_t scratch_time, double lat, double lon, twilight_moment_t *moment) {
     double scratch_year = scratch_time.unit.year + WATCH_RTC_REFERENCE_YEAR;
     double scratch_month = scratch_time.unit.month;
     double scratch_day = scratch_time.unit.day;
     double dawn, twlt;
+    double minutes, seconds;
+    double moment_time;
     uint8_t result;
 
-    switch (sun_index) {
+    switch (moment_index % 8) {
         case 0:
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = dawn;
+            moment_time = dawn;
             strcpy(moment->custom_text, "aDn");
             strcpy(moment->classic_text, "aD");
             break;
         case 1:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = dawn;
+            moment_time = dawn;
             strcpy(moment->custom_text, "nDn");
             strcpy(moment->classic_text, "nD");
             break;
         case 2:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = dawn;
+            moment_time = dawn;
             strcpy(moment->custom_text, "cDn");
             strcpy(moment->classic_text, "cD");
             break;
         case 3:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = dawn;
+            moment_time = dawn;
             strcpy(moment->custom_text, "Ris");
             strcpy(moment->classic_text, "Ri");
             break;
         case 4:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = twlt;
+            moment_time = twlt;
             strcpy(moment->custom_text, "Set");
             strcpy(moment->classic_text, "Se");
             break;
         case 5:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = twlt;
+            moment_time = twlt;
             strcpy(moment->custom_text, "cTw");
             strcpy(moment->classic_text, "cT");
             break;
         case 6:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = twlt;
+            moment_time = twlt;
             strcpy(moment->custom_text, "nTw");
             strcpy(moment->classic_text, "nT");
             break;
         case 7:
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment->time = twlt;
+            moment_time = twlt;
             strcpy(moment->custom_text, "aTw");
             strcpy(moment->classic_text, "aT");
             break;
     }
+    moment->time = moment_time;
+
     return result;
 }
 
 static void _twilight_face_update(twilight_state_t *state) {
     char buf[14];
-    double rise, set, minutes, seconds;
+    double minutes, seconds;
     bool show_next_match = false;
     uint8_t result;
-    double sun_time;
+    uint8_t working_moment_index;
     twilight_moment_t moment;
 
     movement_location_t movement_location;
@@ -150,6 +156,7 @@ static void _twilight_face_update(twilight_state_t *state) {
     watch_date_time_t date_time = movement_get_local_date_time(); // the current local date / time
     watch_date_time_t scratch_time; // scratchpad, contains different values at different times
     scratch_time.reg = date_time.reg;
+    double hours_from_utc = ((double)movement_get_timezone_offset_for_date(scratch_time)) / 3600.0;
 
     // Weird quirky unsigned things were happening when I tried to cast these directly to doubles below.
     // it looks redundant, but extracting them to local int16's seemed to fix it.
@@ -159,16 +166,23 @@ static void _twilight_face_update(twilight_state_t *state) {
     double lat = (double)lat_centi / 100.0;
     double lon = (double)lon_centi / 100.0;
 
-    // we loop twice because if it's after the moment for today, we need to recalculate to display the value for tomorrow.
-    for(int i = 0; i < 2; i++) {
-        double hours_from_utc = ((double)movement_get_timezone_offset_for_date(scratch_time)) / 3600.0;
-        double scratch_year = scratch_time.unit.year + WATCH_RTC_REFERENCE_YEAR;
-        double scratch_month = scratch_time.unit.month;
-        double scratch_day = scratch_time.unit.day;
+    // we loop through all moments to find the current (or first) one in the future
+    working_moment_index = state->moment_index;
+    uint8_t initial_moment_index = working_moment_index;
 
-        // get the time and text for the sun moment by index for the given day
-        result = get_sun_time(state->rise_index, scratch_time, lat, lon, &moment);
-        // watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
+    if (working_moment_index >= 8) {
+       // moment index is past the next astronomical dawn, which is tomorrow
+       // so add a day to the scratch time
+       uint32_t timestamp = watch_utility_date_time_to_unix_time(date_time, 0);
+       timestamp += 86400;
+       scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+    }
+
+    // we loop through moment indexes until we find a moment in the future
+    for(int i = 0; i < 10; i++) {
+
+        // get the time and text for the sun moment by index for the date given by scratch_time
+        result = get_moment_time(working_moment_index, scratch_time, lat, lon, &moment);
 
         if (result != 0) {
             // no time to display
@@ -176,8 +190,6 @@ static void _twilight_face_update(twilight_state_t *state) {
             watch_clear_indicator(WATCH_INDICATOR_PM);
             watch_clear_indicator(WATCH_INDICATOR_24H);
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
-            // if (result == 1) watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "SET", "SE");
-            // else watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "RIS", "rI");
             sprintf(buf, "%2d", scratch_time.unit.day);
             watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
             watch_display_text(WATCH_POSITION_BOTTOM, "None  ");
@@ -197,7 +209,7 @@ static void _twilight_face_update(twilight_state_t *state) {
         if (seconds < 30) scratch_time.unit.minute = floor(minutes);
         else scratch_time.unit.minute = ceil(minutes);
 
-        // Handle hour overflow from timezone conversion
+        // Handle hour overflow from timezone conversion into scratch_time
         while (scratch_time.unit.hour >= 24) {
             scratch_time.unit.hour -= 24;
             // Increment day (this will be handled by the date arithmetic)
@@ -211,11 +223,13 @@ static void _twilight_face_update(twilight_state_t *state) {
             scratch_time.unit.hour = (scratch_time.unit.hour + 1) % 24;
         }
 
+        // mark current moment as the expiration time
         if (date_time.reg < scratch_time.reg) _twilight_set_expiration(state, scratch_time);
 
-        // display moment for this day or skip to next day if the moment has passed
-        if (date_time.reg < scratch_time.reg || show_next_match) {
-            if (state->rise_index == 0 || show_next_match) {
+        // if the desired moment hasn't passed we can show it
+        // because it's either the next one in time, or one selected after that
+
+        if (date_time.reg < scratch_time.reg) {
                 if (!movement_clock_mode_24h()) {
                     if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
                     else watch_clear_indicator(WATCH_INDICATOR_PM);
@@ -223,20 +237,21 @@ static void _twilight_face_update(twilight_state_t *state) {
                 watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
                 sprintf(buf, "%2d", scratch_time.unit.day);
                 watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
-                sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
+                if (TWILIGHT_DEBUG) {
+                    // debug moment index on screen
+                    sprintf(buf, "%2d%02d%2d", scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
+                } else {
+                    sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
+                }
                 watch_display_text(WATCH_POSITION_BOTTOM, buf);
+
+                // set the state moment index to the one we just displayed and return
+                state->moment_index = working_moment_index % twilight_max_moments;
                 return;
-            } else {
-                show_next_match = true;
-            }
         }
 
-        /*
-        // it's after sunset. we need to display sunrise/sunset for tomorrow.
-        uint32_t timestamp = watch_utility_date_time_to_unix_time(date_time, 0);
-        timestamp += 86400;
-        scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
-        */
+        // try the next moment index
+        working_moment_index = (working_moment_index + 1) % twilight_max_moments;
     }
 }
 
@@ -531,9 +546,9 @@ bool twilight_face_loop(movement_event_t event, void *context) {
                 if (event.event_type == EVENT_LOW_ENERGY_UPDATE && !watch_sleep_animation_is_running()) watch_start_sleep_animation(1000);
                 // check if we need to update the display
                 watch_date_time_t date_time = movement_get_local_date_time();
-                if (date_time.reg >= state->rise_set_expires.reg) {
-                    // and on the off chance that this happened before EVENT_TIMEOUT snapped us back to rise/set 0, go back now
-                    state->rise_index = 0;
+                if (date_time.reg >= state->moment_expires.reg) {
+                    // and on the off chance that this happened before EVENT_TIMEOUT snapped us back to moment 0, go back now
+                    state->moment_index = 0;
                     _twilight_face_update(state);
                 }
             } else {
@@ -582,7 +597,7 @@ bool twilight_face_loop(movement_event_t event, void *context) {
                 _twilight_face_advance_digit(state);
                 _twilight_face_update_settings_display(event, context);
             } else {
-                state->rise_index = (state->rise_index + 1) % 8;
+                state->moment_index = (state->moment_index + 1) % twilight_max_moments;
                 _twilight_face_update(state);
             }
             break;
@@ -610,10 +625,10 @@ bool twilight_face_loop(movement_event_t event, void *context) {
             if (load_location_from_filesystem().reg == 0) {
                 // if no location set, return home
                 movement_move_to_face(0);
-            } else if (state->page || state->rise_index) {
-                // otherwise on timeout, exit settings mode and return to the next sunrise or sunset
+            } else if (state->page || state->moment_index) {
+                // otherwise on timeout, exit settings mode and return to the next moment
                 state->page = 0;
-                state->rise_index = 0;
+                state->moment_index = 0;
                 movement_request_tick_frequency(1);
                 _twilight_face_update(state);
             }
@@ -629,6 +644,6 @@ void twilight_face_resign(void *context) {
     twilight_state_t *state = (twilight_state_t *)context;
     state->page = 0;
     state->active_digit = 0;
-    state->rise_index = 0;
+    state->moment_index = 0;
     _twilight_face_update_location_register(state);
 }
