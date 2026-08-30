@@ -70,58 +70,57 @@ static uint8_t get_moment_time(uint8_t moment_index, watch_date_time_t scratch_t
     double scratch_year = scratch_time.unit.year + WATCH_RTC_REFERENCE_YEAR;
     double scratch_month = scratch_time.unit.month;
     double scratch_day = scratch_time.unit.day;
-    double dawn, twlt;
-    double minutes, seconds;
+    double dawn, dusk;
     double moment_time;
     uint8_t result;
 
     switch (moment_index % 8) {
         case 0:
-            result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
+            result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "aDn");
             strcpy(moment->classic_text, "aD");
             break;
         case 1:
-            result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
+            result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "nDn");
             strcpy(moment->classic_text, "nD");
             break;
         case 2:
-            result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
+            result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "cDn");
             strcpy(moment->classic_text, "cD");
             break;
         case 3:
-            result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
+            result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
-            strcpy(moment->custom_text, "Ris");
+            strcpy(moment->custom_text, "RIs");
             strcpy(moment->classic_text, "Ri");
             break;
         case 4:
-            result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment_time = twlt;
-            strcpy(moment->custom_text, "Set");
+            result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
+            moment_time = dusk;
+            strcpy(moment->custom_text, "SEt");
             strcpy(moment->classic_text, "Se");
             break;
         case 5:
-            result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment_time = twlt;
-            strcpy(moment->custom_text, "cTw");
+            result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
+            moment_time = dusk;
+            strcpy(moment->custom_text, "cDs");
             strcpy(moment->classic_text, "cT");
             break;
         case 6:
-            result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment_time = twlt;
-            strcpy(moment->custom_text, "nTw");
+            result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
+            moment_time = dusk;
+            strcpy(moment->custom_text, "nDs");
             strcpy(moment->classic_text, "nT");
             break;
         case 7:
-            result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &twlt);
-            moment_time = twlt;
-            strcpy(moment->custom_text, "aTw");
+            result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
+            moment_time = dusk;
+            strcpy(moment->custom_text, "aDs");
             strcpy(moment->classic_text, "aT");
             break;
     }
@@ -179,7 +178,7 @@ static void _twilight_face_update(twilight_state_t *state) {
     }
 
     // we loop through moment indexes until we find a moment in the future
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < 16; i++) {
 
         // get the time and text for the sun moment by index for the date given by scratch_time
         result = get_moment_time(working_moment_index, scratch_time, lat, lon, &moment);
@@ -252,6 +251,22 @@ static void _twilight_face_update(twilight_state_t *state) {
 
         // try the next moment index
         working_moment_index = (working_moment_index + 1) % twilight_max_moments;
+
+        if (working_moment_index >= 8) {
+           // moment index is past the next astronomical dawn, which is tomorrow
+           // so add a day to the scratch time
+           uint32_t timestamp = watch_utility_date_time_to_unix_time(date_time, 0);
+           timestamp += 86400;
+           scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+        }
+    }
+    if (TWILIGHT_DEBUG) {
+        // fall through for checking
+        watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "ERR", "Err");
+        //sprintf(buf, "%2d", scratch_time.unit.day);
+        watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
+        sprintf(buf, "%2d%02d%2d", scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
+        watch_display_text(WATCH_POSITION_BOTTOM, buf);
     }
 }
 
