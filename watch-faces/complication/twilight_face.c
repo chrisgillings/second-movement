@@ -2,6 +2,7 @@
  * MIT License
  *
  * Copyright (c) 2022 Joey Castillo
+ * Copyright (c) 2026 Chris Gillings <git@ned-ludd.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -126,6 +127,12 @@ static uint8_t get_moment_time(uint8_t moment_index, watch_date_time_t scratch_t
     }
     moment->time = moment_time;
 
+#if __EMSCRIPTEN__
+    char logbuf[48];
+    snprintf( logbuf, sizeof(logbuf), "Moment %d %d-%02d-%02d %s %f", result, (int)scratch_year, (int)scratch_month, (int)scratch_day, moment->custom_text, moment_time);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
+
     return result;
 }
 
@@ -136,6 +143,9 @@ static void _twilight_face_update(twilight_state_t *state) {
     uint8_t result;
     uint8_t working_moment_index;
     twilight_moment_t moment;
+#if __EMSCRIPTEN__
+    char logbuf[48];
+#endif
 
     movement_location_t movement_location;
     if (state->longLatToUse == 0 || _location_count <= 1)
@@ -147,13 +157,18 @@ static void _twilight_face_update(twilight_state_t *state) {
 
     // display placeholder text for no location (and thus no moment times)
     if (movement_location.reg == 0) {
-        watch_display_text_with_fallback(WATCH_POSITION_TOP, "Twlgt", "Tw");
+        watch_display_text_with_fallback(WATCH_POSITION_TOP, "TwLgt", "TL");
         watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "No LOC", "No Loc");
         return;
     }
 
     watch_date_time_t date_time = movement_get_local_date_time(); // the current local date / time
     watch_date_time_t scratch_time; // scratchpad, contains different values at different times
+
+    // manually debug dates e.g. solstice
+    // date_time.unit.month = 6;
+    // date_time.unit.day = 21;
+
     scratch_time.reg = date_time.reg;
     double hours_from_utc = ((double)movement_get_timezone_offset_for_date(scratch_time)) / 3600.0;
 
@@ -177,23 +192,12 @@ static void _twilight_face_update(twilight_state_t *state) {
        scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
     }
 
+
     // we loop through moment indexes until we find a moment in the future
     for(int i = 0; i < 16; i++) {
 
         // get the time and text for the sun moment by index for the date given by scratch_time
         result = get_moment_time(working_moment_index, scratch_time, lat, lon, &moment);
-
-        if (result != 0) {
-            // no time to display
-            watch_clear_colon();
-            watch_clear_indicator(WATCH_INDICATOR_PM);
-            watch_clear_indicator(WATCH_INDICATOR_24H);
-            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
-            sprintf(buf, "%2d", scratch_time.unit.day);
-            watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
-            watch_display_text(WATCH_POSITION_BOTTOM, "None  ");
-            return;
-        }
 
         watch_set_colon();
         if (movement_clock_mode_24h()) watch_set_indicator(WATCH_INDICATOR_24H);
@@ -227,8 +231,15 @@ static void _twilight_face_update(twilight_state_t *state) {
 
         // if the desired moment hasn't passed we can show it
         // because it's either the next one in time, or one selected after that
+#if __EMSCRIPTEN__
+    // debug moment index on screen
+    sprintf(logbuf, "Current Date time %02d:%02d %2d", date_time.unit.hour, date_time.unit.minute,working_moment_index);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+    sprintf(logbuf, "Moment testing %d %02d:%02d %2d", result, scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
 
-        if (date_time.reg < scratch_time.reg) {
+        if ((result == 0) && (date_time.reg < scratch_time.reg)) {
                 if (!movement_clock_mode_24h()) {
                     if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
                     else watch_clear_indicator(WATCH_INDICATOR_PM);
@@ -236,12 +247,11 @@ static void _twilight_face_update(twilight_state_t *state) {
                 watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
                 sprintf(buf, "%2d", scratch_time.unit.day);
                 watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
-                if (TWILIGHT_DEBUG) {
-                    // debug moment index on screen
-                    sprintf(buf, "%2d%02d%2d", scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
-                } else {
-                    sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
-                }
+#if __EMSCRIPTEN__
+    sprintf(logbuf, "Moment displayed %02d:%02d %2d", scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
+                sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
                 watch_display_text(WATCH_POSITION_BOTTOM, buf);
 
                 // set the state moment index to the one we just displayed and return
@@ -260,13 +270,18 @@ static void _twilight_face_update(twilight_state_t *state) {
            scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
         }
     }
-    if (TWILIGHT_DEBUG) {
-        // fall through for checking
-        watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "ERR", "Err");
-        //sprintf(buf, "%2d", scratch_time.unit.day);
-        watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
-        sprintf(buf, "%2d%02d%2d", scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
-        watch_display_text(WATCH_POSITION_BOTTOM, buf);
+#if __EMSCRIPTEN__
+    // debug fallthrough
+    sprintf(logbuf, "Fallthrough result=%d lat=%f", result, lat);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
+    // fall through for no moments: midnight sun or polar night
+    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Pol", "Pl");
+    // watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
+    if (result == 1) {
+        watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "day", "Day");
+    } else {
+        watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "night", "ngt");
     }
 }
 
@@ -556,6 +571,7 @@ bool twilight_face_loop(movement_event_t event, void *context) {
             break;
         case EVENT_LOW_ENERGY_UPDATE:
         case EVENT_TICK:
+/*
             if (state->page == 0) {
                 // if entering low energy mode, start tick animation
                 if (event.event_type == EVENT_LOW_ENERGY_UPDATE && !watch_sleep_animation_is_running()) watch_start_sleep_animation(1000);
@@ -567,8 +583,11 @@ bool twilight_face_loop(movement_event_t event, void *context) {
                     _twilight_face_update(state);
                 }
             } else {
+*/
+            if (state->page != 0) {
                 _twilight_face_update_settings_display(event, state);
             }
+
             break;
         case EVENT_LIGHT_BUTTON_DOWN:
             if (state->page) {
