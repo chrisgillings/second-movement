@@ -49,10 +49,8 @@ typedef struct {
     struct {
         watch_date_time_t previous;
     } date_time;
-    uint8_t last_battery_check;
     uint8_t watch_face_index;
     bool time_signal_enabled;
-    bool battery_low;
 } sun_transits_state_t;
 
 void sun_transits_face_setup(uint8_t watch_face_index, void ** context_ptr);
