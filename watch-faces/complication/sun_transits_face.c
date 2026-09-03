@@ -80,8 +80,8 @@ void watch_display_transit_event_text(double transit_angle) {
     char daynum[2+1];
     uint16_t t_angle = transit_angle;
 
-    // northern hemisphere (or equator) has transit names shifted by six months
-    if (hemisphere() >= 0) {
+    // southern hemisphere (or equator) has transit names shifted by six months
+    if (hemisphere() < 0) {
         t_angle = ((int)transit_angle + 180) % 360;
     }
     /*
