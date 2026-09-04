@@ -101,7 +101,7 @@ static double _astro_special_floor(double d) {
     return floor(d) - 1;
 }
 
-double convert_date_to_julian_date(watch_date_time_t date_time) {
+static double convert_date_to_julian_date(watch_date_time_t date_time) {
 
     uint16_t year = date_time.unit.year + WATCH_RTC_REFERENCE_YEAR;
     uint8_t month = date_time.unit.month;
@@ -133,17 +133,17 @@ double convert_date_to_julian_date(watch_date_time_t date_time) {
 
 #define M_PI 3.1415926535897932384
 
-double degrees_to_radians(double degrees) {
+static double degrees_to_radians(double degrees) {
     return degrees * (M_PI / 180.0);
 }
-double dcos(double degrees) {
+static double dcos(double degrees) {
     return cos(degrees_to_radians(degrees));
 }
-double dsin(double degrees) {
+static double dsin(double degrees) {
     return sin(degrees_to_radians(degrees));
 }
 
-double get_GMST(double jd, watch_date_time_t utc_dt) {
+static double get_GMST(double jd, watch_date_time_t utc_dt) {
     double DTT = jd - 2451545.0;
 
     double H = (double)utc_dt.unit.hour + (double)utc_dt.unit.minute / 60 + (double)utc_dt.unit.second / 3600;
@@ -191,7 +191,7 @@ double get_GMST(double jd, watch_date_time_t utc_dt) {
     return GMST;
 }
 
-void sidereal_time_display_all(sidereal_time_state_t *state, watch_date_time_t date_time) {
+static void sidereal_time_display_all(sidereal_time_state_t *state, watch_date_time_t date_time) {
     char buf[8 + 1];
 
     watch_date_time_t rtc_date_time = watch_rtc_get_date_time();
