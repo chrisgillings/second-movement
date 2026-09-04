@@ -70,7 +70,7 @@ static uint8_t hemisphere() {
     return 0;
 }
 
-void watch_display_transit_event_text(double transit_angle) {
+static void watch_display_transit_event_text(double transit_angle) {
 
     // display watch face text according to the transit angle
    // so that the viewer can tell which transit event they're looking at
@@ -158,7 +158,7 @@ static double _astro_special_floor(double d) {
     return floor(d) - 1;
 }
 
-double convert_date_to_julian_date(watch_date_time_t date_time) {
+static double convert_date_to_julian_date(watch_date_time_t date_time) {
 
     uint16_t year = date_time.unit.year + WATCH_RTC_REFERENCE_YEAR;
     uint8_t month = date_time.unit.month;
@@ -188,7 +188,7 @@ double convert_date_to_julian_date(watch_date_time_t date_time) {
     return jd;
 }
 
-watch_date_time_t julian_date_to_date_time(double jd)
+static watch_date_time_t julian_date_to_date_time(double jd)
 {
     // function provided by ChatGPT
 
@@ -285,7 +285,7 @@ watch_date_time_t julian_date_to_date_time(double jd)
     return dt;
 }
 
-watch_date_time_t convert_julian_date_to_gregorian_date(double jd) {
+static watch_date_time_t convert_julian_date_to_gregorian_date(double jd) {
 
     // algorithm provided by ChatGPT
 
@@ -312,14 +312,14 @@ watch_date_time_t convert_julian_date_to_gregorian_date(double jd) {
 
 #define M_PI 3.1415926535897932384
 
-double degrees_to_radians(double degrees) {
+static double degrees_to_radians(double degrees) {
     return degrees * (M_PI / 180.0);
 }
-double dsin(double degrees) {
+static double dsin(double degrees) {
     return sin(degrees_to_radians(degrees));
 }
 
-double solar_longitude_2(double jd) {
+static double solar_longitude_2(double jd) {
 
     // calculate **approximate** solar longitude for a Julian date
 
@@ -343,7 +343,7 @@ double solar_longitude_2(double jd) {
     return longitude;
 }
 
-double true_solar_longitude(double jd) {
+static double true_solar_longitude(double jd) {
 
     // calculate a reasonably accurate solar longitude for a Julian date
     // (from NOAA Solar Calculations spreadsheet formulas)
@@ -366,7 +366,7 @@ double true_solar_longitude(double jd) {
     return M;
 }
 
-double solar_longitude_usmil(double jd) {
+static double solar_longitude_usmil(double jd) {
 
     // calculate **approximate** solar longitude for a Julian date
 
@@ -381,7 +381,7 @@ double solar_longitude_usmil(double jd) {
     return longitude;
 }
 
-double find_solar_transit(double target_longitude, double starting_julian_date, double increment) {
+static double find_solar_transit(double target_longitude, double starting_julian_date, double increment) {
 
     // find the Julian date for a target solar longitude
     // by repeatedly incrementing from starting_julian_date
