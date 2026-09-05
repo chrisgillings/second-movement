@@ -86,9 +86,6 @@ void twilight_face_resign(void *context);
 // this constant must be greater than 12
 #define TWILIGHT_MAX_MOMENTS 16
 
-// debugging flag
-#define TWILIGHT_DEBUG false
-
 typedef struct {
     char name[3];
     int16_t latitude;
@@ -103,6 +100,5 @@ static const twilight_long_lat_presets_t longLatPresets[] =
 //    { .name = "LA", .latitude = 3405, .longitude = -11824, .timezone = -7 },  // Los Angeles, CA
 //    { .name = "dE", .latitude = 4221, .longitude = -8305, .timezone = -4 },  // Detroit, MI
 };
-
 
 #endif // TWILIGHT_FACE_H_
