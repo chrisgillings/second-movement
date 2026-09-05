@@ -30,7 +30,6 @@
 #include <string.h>
 #include <math.h>
 #include "twilight_face.h"
-#include "sunrise_sunset_face.h"
 #include "watch.h"
 #include "watch_utility.h"
 #include "watch_common_display.h"
@@ -43,7 +42,7 @@
 
 static const uint8_t twilight_max_moments = TWILIGHT_MAX_MOMENTS;
 
-static const uint8_t _location_count = sizeof(longLatPresets) / sizeof(long_lat_presets_t);
+static const uint8_t _location_count = sizeof(longLatPresets) / sizeof(twilight_long_lat_presets_t);
 
 static void persist_location_to_filesystem(movement_location_t new_location) {
     movement_location_t maybe_location = {0};
@@ -79,65 +78,41 @@ static uint8_t get_moment_time(uint8_t moment_index, watch_date_time_t scratch_t
         case 0:
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
-            strcpy(moment->custom_text, "aDn");
-            // strcpy(moment->classic_text, "aD");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "ad");
             break;
         case 1:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
-            strcpy(moment->custom_text, "nDn");
-            // strcpy(moment->classic_text, "nD");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "nd");
             break;
         case 2:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
-            strcpy(moment->custom_text, "cDn");
-            // strcpy(moment->classic_text, "cD");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "cd");
             break;
         case 3:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
-            strcpy(moment->custom_text, "RIs");
-            // strcpy(moment->classic_text, "Ri");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "ri");
             break;
         case 4:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
-            strcpy(moment->custom_text, "SEt");
-            // strcpy(moment->classic_text, "Se");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "sE");
             break;
         case 5:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
-            strcpy(moment->custom_text, "cDs");
-            // strcpy(moment->classic_text, "cT");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "ct");
             break;
         case 6:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
-            strcpy(moment->custom_text, "nDs");
-            // strcpy(moment->classic_text, "nT");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "nt");
             break;
         case 7:
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
-            strcpy(moment->custom_text, "aDs");
-            // strcpy(moment->classic_text, "aT");
-            strcpy(moment->classic_text, "TL");
             strcpy(moment->seconds_text, "at");
             break;
     }
@@ -160,9 +135,13 @@ static void _twilight_face_update(twilight_state_t *state) {
     uint8_t working_moment_index;
     twilight_moment_t moment;
 #if __EMSCRIPTEN__
-    char logbuf[48];
+    char logbuf[52];
 #endif
 
+#if __EMSCRIPTEN__
+    sprintf(logbuf, "Loading #%d of %d locations", state->longLatToUse, _location_count);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
     movement_location_t movement_location;
     if (state->longLatToUse == 0 || _location_count <= 1)
         movement_location = load_location_from_filesystem();
@@ -170,6 +149,10 @@ static void _twilight_face_update(twilight_state_t *state) {
         movement_location.bit.latitude = longLatPresets[state->longLatToUse].latitude;
         movement_location.bit.longitude = longLatPresets[state->longLatToUse].longitude;
     }
+#if __EMSCRIPTEN__
+    sprintf(logbuf, "lat %f lon %f", movement_location.bit.latitude/100.0, movement_location.bit.longitude/100.0);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
 
     // display placeholder text for no location (and thus no moment times)
     if (movement_location.reg == 0) {
@@ -186,7 +169,13 @@ static void _twilight_face_update(twilight_state_t *state) {
     // date_time.unit.day = 21;
 
     scratch_time.reg = date_time.reg;
+
+    // get time shift from utc for location
     double hours_from_utc = ((double)movement_get_timezone_offset_for_date(scratch_time)) / 3600.0;
+#if __EMSCRIPTEN__
+    sprintf(logbuf, "hours_from_utc %f", hours_from_utc);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
 
     // Weird quirky unsigned things were happening when I tried to cast these directly to doubles below.
     // it looks redundant, but extracting them to local int16's seemed to fix it.
@@ -236,6 +225,14 @@ static void _twilight_face_update(twilight_state_t *state) {
             timestamp += 86400;
             scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
         }
+        // underflow (for negative longitude)
+        while (scratch_time.unit.hour < 0) {
+            scratch_time.unit.hour += 24;
+            // Increment day (this will be handled by the date arithmetic)
+            uint32_t timestamp = watch_utility_date_time_to_unix_time(scratch_time, 0);
+            timestamp -= 86400;
+            scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+        }
 
         if (scratch_time.unit.minute == 60) {
             scratch_time.unit.minute = 0;
@@ -260,7 +257,14 @@ static void _twilight_face_update(twilight_state_t *state) {
                     if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
                     else watch_clear_indicator(WATCH_INDICATOR_PM);
                 }
-                watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, moment.custom_text, moment.classic_text);
+                // Handle display of Presets (if we add their timezones to the data in the definitions)
+                if (state->longLatToUse == 0 || _location_count <= 1) {
+                    // by default we display the name of the complication in the Weekday digits
+                    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "TwI", "TL");
+                } else {
+                    // display preset label in the Weekday digits
+                    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, longLatPresets[state->longLatToUse].name, longLatPresets[state->longLatToUse].name);
+                }
                 sprintf(buf, "%2d", scratch_time.unit.day);
                 watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
 #if __EMSCRIPTEN__
@@ -268,12 +272,8 @@ static void _twilight_face_update(twilight_state_t *state) {
     emscripten_log(EM_LOG_CONSOLE, logbuf);
 #endif
 
-                if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
-                    sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
-                } else {
-                    // classic LCD gets the moment type in the seconds field
-                    sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute, moment.seconds_text);
-                }
+                // moment type is always displayed in the Seconds field
+                sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute, moment.seconds_text);
                 watch_display_text(WATCH_POSITION_BOTTOM, buf);
 
                 // set the state moment index to the one we just displayed and return
