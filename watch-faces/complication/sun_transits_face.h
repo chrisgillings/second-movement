@@ -45,6 +45,9 @@
 
 #include "movement.h"
 
+#define SUN_TRANSIT_MINIMUM_DAY_GAP 44
+#define SUN_TRANSIT_MAXIMUM_DAY_GAP 48
+
 typedef struct {
     struct {
         watch_date_time_t previous;
