@@ -29,11 +29,11 @@
  * SOFTWARE.
  */
 
-#ifndef SIDEREAL_FACE_H_
-#define SIDEREAL_FACE_H_
+#ifndef SIDEREAL_TIME_FACE_H_
+#define SIDEREAL_TIME_FACE_H_
 
 /*
- * SIDEREAL FACE
+ * SIDEREAL TIME FACE
  *
  * Displays the current Sidereal Time for the current location (longitude)
  *
@@ -54,18 +54,18 @@ typedef struct {
 
 } sidereal_time_state_t;
 
-void sidereal_face_setup(uint8_t watch_face_index, void ** context_ptr);
-void sidereal_face_activate(void *context);
-bool sidereal_face_loop(movement_event_t event, void *context);
-void sidereal_face_resign(void *context);
-movement_watch_face_advisory_t sidereal_face_advise(void *context);
+void sidereal_time_face_setup(uint8_t watch_face_index, void ** context_ptr);
+void sidereal_time_face_activate(void *context);
+bool sidereal_time_face_loop(movement_event_t event, void *context);
+void sidereal_time_face_resign(void *context);
+movement_watch_face_advisory_t sidereal_time_face_advise(void *context);
 
-#define sidereal_face ((const watch_face_t) { \
-    sidereal_face_setup, \
-    sidereal_face_activate, \
-    sidereal_face_loop, \
-    sidereal_face_resign, \
-    sidereal_face_advise, \
+#define sidereal_time_face ((const watch_face_t) { \
+    sidereal_time_face_setup, \
+    sidereal_time_face_activate, \
+    sidereal_time_face_loop, \
+    sidereal_time_face_resign, \
+    sidereal_time_face_advise, \
 })
 
-#endif // SIDEREAL_FACE_H_
+#endif // SIDEREAL_TIME_FACE_H_
