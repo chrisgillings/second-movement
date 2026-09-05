@@ -80,49 +80,65 @@ static uint8_t get_moment_time(uint8_t moment_index, watch_date_time_t scratch_t
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "aDn");
-            strcpy(moment->classic_text, "aD");
+            // strcpy(moment->classic_text, "aD");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "ad");
             break;
         case 1:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "nDn");
-            strcpy(moment->classic_text, "nD");
+            // strcpy(moment->classic_text, "nD");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "nd");
             break;
         case 2:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "cDn");
-            strcpy(moment->classic_text, "cD");
+            // strcpy(moment->classic_text, "cD");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "cd");
             break;
         case 3:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dawn;
             strcpy(moment->custom_text, "RIs");
-            strcpy(moment->classic_text, "Ri");
+            // strcpy(moment->classic_text, "Ri");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "ri");
             break;
         case 4:
             result = sun_rise_set(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
             strcpy(moment->custom_text, "SEt");
-            strcpy(moment->classic_text, "Se");
+            // strcpy(moment->classic_text, "Se");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "sE");
             break;
         case 5:
             result = civil_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
             strcpy(moment->custom_text, "cDs");
-            strcpy(moment->classic_text, "cT");
+            // strcpy(moment->classic_text, "cT");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "ct");
             break;
         case 6:
             result = nautical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
             strcpy(moment->custom_text, "nDs");
-            strcpy(moment->classic_text, "nT");
+            // strcpy(moment->classic_text, "nT");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "nt");
             break;
         case 7:
             result = astronomical_twilight(scratch_year, scratch_month, scratch_day, lon, lat, &dawn, &dusk);
             moment_time = dusk;
             strcpy(moment->custom_text, "aDs");
-            strcpy(moment->classic_text, "aT");
+            // strcpy(moment->classic_text, "aT");
+            strcpy(moment->classic_text, "TL");
+            strcpy(moment->seconds_text, "at");
             break;
     }
     moment->time = moment_time;
@@ -251,7 +267,13 @@ static void _twilight_face_update(twilight_state_t *state) {
     sprintf(logbuf, "Moment displayed %02d:%02d %2d", scratch_time.unit.hour, scratch_time.unit.minute,working_moment_index);
     emscripten_log(EM_LOG_CONSOLE, logbuf);
 #endif
-                sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
+
+                if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
+                    sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
+                } else {
+                    // classic LCD gets the moment type in the seconds field
+                    sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute, moment.seconds_text);
+                }
                 watch_display_text(WATCH_POSITION_BOTTOM, buf);
 
                 // set the state moment index to the one we just displayed and return
