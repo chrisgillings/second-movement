@@ -96,47 +96,53 @@ static void watch_display_transit_event_text(double transit_angle) {
     315   cross-quarter "CQ" "Im"  Imbolc
     360   March equinox again
     */
+    // transit type is displayed in the Day digits
+    // for both LCD types
+    char equinox[2+1] = "=E";
+    char solstice[2+1] = "=S";
+    char quarter[2+1] = "=q";
+
     switch(t_angle) {
         case 0:
         case 360:
             strcpy(custom_lcd,"Aut");
             strcpy(classic_lcd,"Au");
-            strcpy(daynum," E");
+            strcpy(daynum,equinox);
             break;
         case 45:
             strcpy(custom_lcd,"Sam");
             strcpy(classic_lcd,"Sa");
-            strcpy(daynum,"cq");
+            strcpy(daynum,quarter);
             break;
         case 90:
             strcpy(custom_lcd,"Win");
             strcpy(classic_lcd,"Wi");
-            strcpy(daynum," S");
+            strcpy(daynum,solstice);
             break;
         case 135:
             strcpy(custom_lcd,"Imb");
             strcpy(classic_lcd,"Ib");
-            strcpy(daynum,"cq");
+            strcpy(daynum,quarter);
             break;
         case 180:
             strcpy(custom_lcd,"Spr");
-            strcpy(classic_lcd,"Sp");
-            strcpy(daynum," E");
+            strcpy(classic_lcd,"S ");
+            strcpy(daynum,equinox);
             break;
         case 225:
-            strcpy(custom_lcd,"Bel");
+            strcpy(custom_lcd,"BeL");
             strcpy(classic_lcd,"Be");
-            strcpy(daynum,"cq");
+            strcpy(daynum,quarter);
             break;
         case 270:
-            strcpy(custom_lcd,"Sum");
+            strcpy(custom_lcd,"SUM");
             strcpy(classic_lcd,"Su");
-            strcpy(daynum," S");
+            strcpy(daynum,solstice);
             break;
         case 315:
-            strcpy(custom_lcd,"Lug");
+            strcpy(custom_lcd,"LUg");
             strcpy(classic_lcd,"Lu");
-            strcpy(daynum,"cq");
+            strcpy(daynum,quarter);
             break;
         default:
             strcpy(custom_lcd,"ERR");
@@ -500,6 +506,7 @@ static double sun_transits_display_all(double julian_now_date_exact) {
         next_transit_date.unit.year+20
     );
 
+watch_set_decimal_if_available();
     watch_display_transit_event_text(next_transit_longitude);
 
     // watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, custom_text, classic_text);
@@ -570,19 +577,21 @@ bool sun_transits_face_loop(movement_event_t event, void *context) {
         case EVENT_LIGHT_BUTTON_UP:
 
 #if __EMSCRIPTEN__
-    snprintf( logbuf, sizeof(logbuf), "Previous Julian date target = %f", last_transit_event_julian_date-90);
+    snprintf( logbuf, sizeof(logbuf), "Previous Julian date target = %f", last_transit_event_julian_date-SUN_TRANSIT_MAXIMUM_DAY_GAP-2);
     emscripten_log(EM_LOG_CONSOLE, logbuf);
 #endif
-            last_transit_event_julian_date = sun_transits_display_sun_transits(last_transit_event_julian_date-90);
+            // jump back to just before the previous transit
+            last_transit_event_julian_date = sun_transits_display_sun_transits(last_transit_event_julian_date-SUN_TRANSIT_MAXIMUM_DAY_GAP-2);
             break;
 
         case EVENT_ALARM_BUTTON_UP:
 
 #if __EMSCRIPTEN__
-    snprintf( logbuf, sizeof(logbuf), "Next Julian date target = %f", last_transit_event_julian_date+30);
+    snprintf( logbuf, sizeof(logbuf), "Next Julian date target = %f", last_transit_event_julian_date+SUN_TRANSIT_MINIMUM_DAY_GAP);
     emscripten_log(EM_LOG_CONSOLE, logbuf);
 #endif
-            last_transit_event_julian_date = sun_transits_display_sun_transits(last_transit_event_julian_date+30);
+            // jump forward to just before the next transit
+            last_transit_event_julian_date = sun_transits_display_sun_transits(last_transit_event_julian_date+SUN_TRANSIT_MINIMUM_DAY_GAP);
             break;
 
         case EVENT_ALARM_LONG_PRESS:
