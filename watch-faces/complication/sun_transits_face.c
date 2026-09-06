@@ -44,6 +44,31 @@
 #include <emscripten.h>
 #endif
 
+/*
+ * display segment code to display triple bar at Daynum 0
+ * because this is the signifier/logo of this face
+ *     _
+ *     -
+ *     -
+
+*/
+
+typedef enum {
+    A, B, C, D, E, F, G
+} segment_t;
+
+static void set_segment_at_position(segment_t segment, uint8_t position) {
+    digit_mapping_t segmap;
+    if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
+        segmap = Custom_LCD_Display_Mapping[position];
+    } else {
+        segmap = Classic_LCD_Display_Mapping[position];
+    }
+    const uint8_t com_pin = segmap.segment[segment].address.com;
+    const uint8_t seg = segmap.segment[segment].address.seg;
+    watch_set_pixel(com_pin, seg);
+}
+
 static movement_location_t load_location_from_filesystem() {
     movement_location_t location = {0};
 
@@ -152,6 +177,11 @@ static void watch_display_transit_event_text(double transit_angle) {
     }
     watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, custom_lcd, classic_lcd);
     watch_display_text(WATCH_POSITION_TOP_RIGHT, daynum);
+    // display triple bar in Day digit 2
+    // because it signifies high/middle/low for the range of sun transits to E/S/q
+    set_segment_at_position(A, 2);
+    set_segment_at_position(D, 2);
+    set_segment_at_position(G, 2);
 }
 
 /* copied in from astrolib.c */
