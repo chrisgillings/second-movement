@@ -42,7 +42,7 @@
 
 static const uint8_t twilight_max_moments = TWILIGHT_MAX_MOMENTS;
 
-static const uint8_t _location_count = sizeof(longLatPresets) / sizeof(twilight_long_lat_presets_t);
+static const uint8_t _location_count = sizeof(twilight_longLatPresets) / sizeof(twilight_long_lat_presets_t);
 
 static void persist_location_to_filesystem(movement_location_t new_location) {
     movement_location_t maybe_location = {0};
@@ -146,8 +146,8 @@ static void _twilight_face_update(twilight_state_t *state) {
     if (state->longLatToUse == 0 || _location_count <= 1)
         movement_location = load_location_from_filesystem();
     else{
-        movement_location.bit.latitude = longLatPresets[state->longLatToUse].latitude;
-        movement_location.bit.longitude = longLatPresets[state->longLatToUse].longitude;
+        movement_location.bit.latitude = twilight_longLatPresets[state->longLatToUse].latitude;
+        movement_location.bit.longitude = twilight_longLatPresets[state->longLatToUse].longitude;
     }
 #if __EMSCRIPTEN__
     sprintf(logbuf, "lat %f lon %f", movement_location.bit.latitude/100.0, movement_location.bit.longitude/100.0);
@@ -263,7 +263,7 @@ static void _twilight_face_update(twilight_state_t *state) {
                     watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "TwI", "TL");
                 } else {
                     // display preset label in the Weekday digits
-                    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, longLatPresets[state->longLatToUse].name, longLatPresets[state->longLatToUse].name);
+                    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, twilight_longLatPresets[state->longLatToUse].name, twilight_longLatPresets[state->longLatToUse].name);
                 }
                 sprintf(buf, "%2d", scratch_time.unit.day);
                 watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);

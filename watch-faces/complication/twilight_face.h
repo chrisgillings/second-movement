@@ -93,7 +93,7 @@ typedef struct {
     float timezone;
 } twilight_long_lat_presets_t;
 
-static const twilight_long_lat_presets_t longLatPresets[] =
+static const twilight_long_lat_presets_t twilight_longLatPresets[] =
 {
     { .name = "  "},  // Default, the long and lat and timezone get replaced by what's set in the watch
 //    { .name = "Ny", .latitude = 4072, .longitude = -7401, .timezone = -4 },  // New York City, NY
