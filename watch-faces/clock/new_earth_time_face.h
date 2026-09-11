@@ -37,6 +37,8 @@
  *
  * Displays the current New Earth Time
  *
+ *   ref. https://newearthtime.net
+ *
  */
 
 #include "movement.h"
