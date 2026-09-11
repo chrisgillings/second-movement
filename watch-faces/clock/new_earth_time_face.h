@@ -8,6 +8,7 @@
  * Copyright © 2022 TheOnePerson <a.nebinger@web.de>
  * Copyright © 2023 Alex Utter <ooterness@gmail.com>
  * Copyright © 2024 Matheus Afonso Martins Moreira <matheus.a.m.moreira@gmail.com>
+ * Copyright © 2026 Chris Gillings <git@ned-ludd.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
