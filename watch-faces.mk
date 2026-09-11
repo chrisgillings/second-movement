@@ -1,10 +1,10 @@
 SRCS += \
   ./watch-faces/clock/clock_face.c \
   ./watch-faces/clock/beats_face.c \
-  ./watch-faces/clock/new_earth_time_face.c \
   ./watch-faces/clock/world_clock_face.c \
   ./watch-faces/clock/mars_time_face.c \
   ./watch-faces/clock/ish_face.c \
+  ./watch-faces/clock/new_earth_time_face.c \
   ./watch-faces/complication/alarm_face.c \
   ./watch-faces/complication/advanced_alarm_face.c \
   ./watch-faces/complication/countdown_face.c \
@@ -43,6 +43,7 @@ SRCS += \
   ./watch-faces/clock/ke_decimal_time_face.c \
   ./watch-faces/complication/baby_kicks_face.c \
   ./watch-faces/complication/counter_face.c \
+  ./watch-faces/complication/hydration_face.c \
   ./watch-faces/complication/pulsometer_face.c \
   ./watch-faces/complication/interval_face.c \
   ./watch-faces/complication/timer_face.c \
@@ -59,4 +60,5 @@ SRCS += \
   ./watch-faces/complication/tomato_face.c \
   ./watch-faces/clock/solar_time_face.c \
   ./watch-faces/complication/tide_face.c \
+  ./watch-faces/clock/world_clock2_face.c \
 # New watch faces go above this line.
