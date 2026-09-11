@@ -26,7 +26,6 @@
 
 #include "clock_face.h"
 #include "beats_face.h"
-#include "new_earth_time_face.h"
 #include "world_clock_face.h"
 #include "alarm_face.h"
 #include "advanced_alarm_face.h"
@@ -84,7 +83,7 @@
 #include "tomato_face.h"
 #include "solar_time_face.h"
 #include "tide_face.h"
-// legacy?
-// #include "minute_repeater_decimal_face.h"
-// #include "day_one.h"
+#include "world_clock2_face.h"
+#include "hydration_face.h"
+#include "new_earth_time_face.h"
 // New includes go above this line.
