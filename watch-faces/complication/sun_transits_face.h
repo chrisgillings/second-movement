@@ -33,15 +33,39 @@
 #define SUN_TRANSITS_FACE_H_
 
 /*
- * SUN_TRANSITS FACE
+ * SUN TRANSITS FACE
  *
- * Displays the upcoming sun transits that define
+ * Displays the dates of upcoming (and past) sun transits that mark
  * the seasonal Solstices, Equinoxes and Cross-Quarter days,
  * adjusted for hemisphere and local timezone.
  *
  * At activation, the next upcoming transit name and date is shown.
- * The Alarm button steps forward and the Light button steps back.
  *
+ * The Alarm button steps forward to the next event and the Light
+ * button steps back, covering any year between 2020 and 2082.
+ *
+ * The date is displayed in the Clock Digits as dd.mm.yy.
+ *
+ * The Event name is displayed in the Weekday Digits:
+ *
+ *    Spring Equinox ('Spr' / 'Su')
+ *    Beltane Cross-Quarter ('BeL' / 'Be')
+ *    Summer Solstice ( 'SUM' / 'Su')
+ *    Lughnasadh/Lammas Cross-Quarter Day ('LUg' / 'Lu')
+ *    Autumn Equinox ('Aut' / 'Au')
+ *    Samhain Cross-Quarter Day ('Sam' / 'Sa')
+ *    Winter Solstice ('Win' / 'Wi')
+ *    Imbolc Cross-Quarter Day ('Imb' / 'Ib')
+ *
+ * The event type is displayed in the Day Digits position 3:
+ *    Equinox ('E')
+ *    Cross-Quarter ('q')
+ *    Solstice ('S')
+ *
+ * The complication is signified with a triple '=' in the
+ * Day Digits position 2 for all events. The symbol hints at the
+ * movement of the sun between high latitudes and low latitudes
+ * throughout the course of the year.
  *
  */
 
