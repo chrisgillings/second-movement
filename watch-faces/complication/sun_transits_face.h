@@ -8,6 +8,7 @@
  * Copyright © 2022 TheOnePerson <a.nebinger@web.de>
  * Copyright © 2023 Alex Utter <ooterness@gmail.com>
  * Copyright © 2024 Matheus Afonso Martins Moreira <matheus.a.m.moreira@gmail.com>
+ * Copyright © 2026 Chris Gillings <github@ned-ludd.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,11 +36,12 @@
  * SUN_TRANSITS FACE
  *
  * Displays the upcoming sun transits that define
- * the seasonal Solstices, Equinoxes and Cross-Quarter days
+ * the seasonal Solstices, Equinoxes and Cross-Quarter days,
  * adjusted for hemisphere and local timezone.
  *
  * At activation, the next upcoming transit name and date is shown.
  * The Alarm button steps forward and the Light button steps back.
+ *
  *
  */
 
