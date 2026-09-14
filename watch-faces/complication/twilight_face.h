@@ -28,14 +28,36 @@
 /*
  * TWILIGHT AND DAWN FACE
  *
- * The Twilight face is designed to display the next eight twilight moments
- * for a given location, in order from the current time.  From midnight, for instance:
+ *    ref. https://en.wikipedia.org/wiki/Twilight
  *
- *   Astronomical Dawn, Nautical Dawn, Civil Dawn and Sunrise
- *   Astronomical Twilight, Nautical Twilight, Civil Twilight and Sunset
+ * The Twilight face displays the times (hh:mm) of up to the
+ * next sixteen twilight moments for a given location,
+ * in order from the current time until midnight tomorrow.
  *
- * It also functions as an interface for setting the
- * location register, which other watch faces can use for various purposes.
+ * When activated, it will show the time for the next moment.
+ *
+ *   Weekday Digits display "TL" or "Twi"
+ *   Day Digits display the numeric day of the month
+ *
+ *   Clock Digits display hh:mm
+ *   and the moment type in positions 8 and 9:
+ * 
+ *     Astronomical Dawn (ad)
+ *     Nautical Dawn (nd)
+ *     Civil Dawn (cd)
+ *     Sunrise (ri)
+ *     Astronomical Twilight (at)
+ *     Nautical Twilight (nt)
+ *     Civil Twilight (ct)
+ *     Sunset (se)
+ *
+ *   The term 'twilight' is used for Dusk,
+ *   despite the term applying to Dawn/Dusk,
+ *   because Dawn is already using the 'd'.
+ *
+ * The complication also functions as an interface
+ * for setting the Latitude/Longitude location register,
+ * which other watch faces can use for their own purposes.
  *
  * Refer to the wiki for usage instructions (once it is written):
  *  https://www.sensorwatch.net/docs/watchfaces/complication/#twilights
