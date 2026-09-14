@@ -90,7 +90,6 @@ static movement_location_t load_location_from_filesystem() {
     return location;
 }
 
-
 /* copied in from astrolib.c */
 
 //Special "Math.floor()" function used by convertDateToJulianDate()
@@ -217,8 +216,6 @@ static void sidereal_time_display_all(sidereal_time_state_t *state, watch_date_t
 
 #if __EMSCRIPTEN__
     char logbuf[50];
-    // sprintf(logbuf, "jd %f, lon %f",jd,lon);
-    // emscripten_log(EM_LOG_CONSOLE, logbuf);
     sprintf(logbuf, "GMST %f + long %f = lst %f", gmst, lon/15, lst);
     emscripten_log(EM_LOG_CONSOLE, logbuf);
     sprintf(logbuf, "");
@@ -229,7 +226,6 @@ static void sidereal_time_display_all(sidereal_time_state_t *state, watch_date_t
     watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Sid", "Sd");
     sprintf(buf, "");
     sprintf( buf, "%2d%02d%02d", sid_hour, sid_minute, sid_second);
-    // watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
     watch_display_text(WATCH_POSITION_BOTTOM, buf);
 }
 
