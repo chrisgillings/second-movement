@@ -79,21 +79,23 @@ static void industrial_time_check_battery_periodically(industrial_time_state_t *
     industrial_time_indicate_low_available_power(state);
 }
 
-static void industrial_time_display_all(watch_date_time_t date_time) {
+static void industrial_time_display_all(watch_date_time_t date_time, uint8_t subsecond, uint8_t tick_frequency) {
     char daybuf[2 + 1];
     char timebuf[6 + 1];
     int industrial_hours;
     int industrial_fraction;
     float industrial_time;
-    industrial_time = date_time.unit.hour + date_time.unit.minute / 60.0 + date_time.unit.second / 3600.0;
+    industrial_time = date_time.unit.hour
+                      + date_time.unit.minute / 60.0
+                      + (date_time.unit.second + subsecond*(1.0/tick_frequency)) / 3600.0;
     industrial_hours = (int)industrial_time;
     industrial_fraction = (int)((industrial_time-industrial_hours) * 10000);
 
 #if __EMSCRIPTEN__
     char logbuf[60];
-    sprintf(logbuf, "Time = %f, Hours = %d, Fraction = %f => %d",
+    sprintf(logbuf, "Time = %f, Hours = %d, Fraction = %f => %d+%1d/%d",
          industrial_time, industrial_hours,
-         industrial_time-industrial_hours, industrial_fraction);
+         industrial_time-industrial_hours, industrial_fraction, subsecond, tick_frequency);
     emscripten_log(EM_LOG_CONSOLE, logbuf);
 #endif
 
@@ -114,16 +116,11 @@ static void industrial_time_display_all(watch_date_time_t date_time) {
 
     watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Ind", "Id");
     watch_display_text(WATCH_POSITION_TOP_RIGHT, daybuf);
-    if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
-        watch_set_decimal_if_available();
-    } else {
-        watch_set_colon();
-    }
     watch_display_text(WATCH_POSITION_BOTTOM, timebuf);
 }
 
-static void industrial_time_display_industrial_time(watch_date_time_t current) {
-    industrial_time_display_all(current);
+static void industrial_time_display_industrial_time(watch_date_time_t current,uint8_t subsecond, uint8_t tick_frequency) {
+    industrial_time_display_all(current,subsecond,tick_frequency);
 }
 
 void industrial_time_face_setup(uint8_t watch_face_index, void ** context_ptr) {
@@ -140,9 +137,14 @@ void industrial_time_face_setup(uint8_t watch_face_index, void ** context_ptr) {
 void industrial_time_face_activate(void *context) {
     industrial_time_state_t *state = (industrial_time_state_t *) context;
 
-    // industrial_time_indicate_time_signal(false);
+    // set base TICK frequency
+    state->tick_frequency = 1;
 
-    // watch_set_colon();
+    if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
+        watch_set_decimal_if_available();
+    } else {
+        watch_set_colon();
+    }
 
     // this ensures that none of the timestamp fields will match, so we can re-render them all.
     state->date_time.previous.reg = 0xFFFFFFFF;
@@ -160,12 +162,24 @@ bool industrial_time_face_loop(movement_event_t event, void *context) {
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Ind", "Id");
             current = movement_get_local_date_time();
 
-            industrial_time_display_industrial_time(current);
+            industrial_time_display_industrial_time(current,event.subsecond,state->tick_frequency);
 
             industrial_time_check_battery_periodically(state, current);
 
             state->date_time.previous = current;
 
+            break;
+        case EVENT_ALARM_BUTTON_UP:
+            state->tick_frequency *= 2;
+            if (state->tick_frequency > INDUSTRIAL_TIME_MAX_SUBSECONDS) {
+                state->tick_frequency = 1;
+            }
+            movement_request_tick_frequency(state->tick_frequency);
+#if __EMSCRIPTEN__
+    char logbuf[40];
+    snprintf( logbuf, sizeof(logbuf), "Change tick frequency to %d", state->tick_frequency);
+    emscripten_log(EM_LOG_CONSOLE, logbuf);
+#endif
             break;
         case EVENT_ALARM_LONG_PRESS:
             break;
@@ -183,6 +197,8 @@ bool industrial_time_face_loop(movement_event_t event, void *context) {
 
 void industrial_time_face_resign(void *context) {
     (void) context;
+    // restore default TICK frequency
+    movement_request_tick_frequency(1);
 }
 
 movement_watch_face_advisory_t industrial_time_face_advise(void *context) {

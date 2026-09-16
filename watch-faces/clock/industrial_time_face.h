@@ -43,6 +43,8 @@
 
 #include "movement.h"
 
+#define INDUSTRIAL_TIME_MAX_SUBSECONDS 8
+
 typedef struct {
     struct {
         watch_date_time_t previous;
@@ -51,6 +53,7 @@ typedef struct {
     uint8_t watch_face_index;
     bool time_signal_enabled;
     bool battery_low;
+    uint8_t tick_frequency;
 } industrial_time_state_t;
 
 void industrial_time_face_setup(uint8_t watch_face_index, void ** context_ptr);
