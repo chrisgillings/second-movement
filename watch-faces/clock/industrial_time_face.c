@@ -114,7 +114,11 @@ static void industrial_time_display_all(watch_date_time_t date_time) {
 
     watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Ind", "Id");
     watch_display_text(WATCH_POSITION_TOP_RIGHT, daybuf);
-    watch_set_colon();
+    if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
+        watch_set_decimal_if_available();
+    } else {
+        watch_set_colon();
+    }
     watch_display_text(WATCH_POSITION_BOTTOM, timebuf);
 }
 
