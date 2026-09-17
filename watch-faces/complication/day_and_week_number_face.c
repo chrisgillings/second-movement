@@ -98,12 +98,6 @@ static void day_and_week_number_display_all(watch_date_time_t date_time) {
 #endif
 
     snprintf(
-        mthbuf,
-        sizeof(mthbuf),
-        "%2d",
-        date_time.unit.month
-    );
-    snprintf(
         daybuf,
         sizeof(daybuf),
         "%2d",
@@ -112,11 +106,11 @@ static void day_and_week_number_display_all(watch_date_time_t date_time) {
     snprintf(
         timebuf,
         sizeof(timebuf),
-        "d%3d%2d",
+        "n%3d%2d",
         daynumber, weeknumber
     );
 
-    watch_display_text(WATCH_POSITION_TOP_LEFT, mthbuf);
+    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, watch_utility_get_long_weekday(date_time), watch_utility_get_weekday(date_time));
     watch_display_text(WATCH_POSITION_TOP_RIGHT, daybuf);
     watch_display_text(WATCH_POSITION_BOTTOM, timebuf);
 }
