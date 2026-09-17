@@ -79,7 +79,7 @@ static void industrial_time_check_battery_periodically(industrial_time_state_t *
     industrial_time_indicate_low_available_power(state);
 }
 
-static void industrial_time_display_all(watch_date_time_t date_time, uint8_t subsecond, uint8_t tick_frequency) {
+static void industrial_time_display_all(watch_date_time_t date_time, bool utc_time) {
     char daybuf[2 + 1];
     char timebuf[6 + 1];
     int industrial_hours;
@@ -87,15 +87,15 @@ static void industrial_time_display_all(watch_date_time_t date_time, uint8_t sub
     float industrial_time;
     industrial_time = date_time.unit.hour
                       + date_time.unit.minute / 60.0
-                      + (date_time.unit.second + subsecond*(1.0/tick_frequency)) / 3600.0;
+                      + date_time.unit.second / 3600.0;
     industrial_hours = (int)industrial_time;
-    industrial_fraction = (int)((industrial_time-industrial_hours) * 10000);
+    industrial_fraction = (int)((industrial_time-industrial_hours) * 100);
 
 #if __EMSCRIPTEN__
     char logbuf[60];
-    sprintf(logbuf, "Time = %f, Hours = %d, Fraction = %f => %d+%1d/%d",
+    sprintf(logbuf, "Time = %f, Hours = %d, Fraction = %f => %d",
          industrial_time, industrial_hours,
-         industrial_time-industrial_hours, industrial_fraction, subsecond, tick_frequency);
+         industrial_time-industrial_hours, industrial_fraction);
     emscripten_log(EM_LOG_CONSOLE, logbuf);
 #endif
 
@@ -106,21 +106,34 @@ static void industrial_time_display_all(watch_date_time_t date_time, uint8_t sub
         date_time.unit.day
     );
 
+/*
     snprintf(
         timebuf,
         sizeof(timebuf),
-        "%2d%04d",
+        "%2d%02did",
+        industrial_hours,
+        industrial_fraction
+    );
+*/
+    snprintf(
+        timebuf,
+        sizeof(timebuf),
+        "1n%2d%02d",
         industrial_hours,
         industrial_fraction
     );
 
-    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Ind", "Id");
+    if (utc_time) {
+        watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "UTC", "Ut");
+    } else {
+        watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "LoT", "Lt");
+    }
     watch_display_text(WATCH_POSITION_TOP_RIGHT, daybuf);
     watch_display_text(WATCH_POSITION_BOTTOM, timebuf);
 }
 
-static void industrial_time_display_industrial_time(watch_date_time_t current,uint8_t subsecond, uint8_t tick_frequency) {
-    industrial_time_display_all(current,subsecond,tick_frequency);
+static void industrial_time_display_industrial_time(watch_date_time_t current, bool utc_time) {
+    industrial_time_display_all(current, utc_time);
 }
 
 void industrial_time_face_setup(uint8_t watch_face_index, void ** context_ptr) {
@@ -130,15 +143,13 @@ void industrial_time_face_setup(uint8_t watch_face_index, void ** context_ptr) {
         *context_ptr = malloc(sizeof(industrial_time_state_t));
         industrial_time_state_t *state = (industrial_time_state_t *) *context_ptr;
         state->time_signal_enabled = false;
+        state->utc_time = false;
         state->watch_face_index = watch_face_index;
     }
 }
 
 void industrial_time_face_activate(void *context) {
     industrial_time_state_t *state = (industrial_time_state_t *) context;
-
-    // set base TICK frequency
-    state->tick_frequency = 1;
 
     if (watch_get_lcd_type() == WATCH_LCD_TYPE_CUSTOM) {
         watch_set_decimal_if_available();
@@ -160,9 +171,13 @@ bool industrial_time_face_loop(movement_event_t event, void *context) {
         case EVENT_TICK:
         case EVENT_ACTIVATE:
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "Ind", "Id");
-            current = movement_get_local_date_time();
+            if (state->utc_time) {
+                current = movement_get_utc_date_time();
+            } else {
+                current = movement_get_local_date_time();
+            }
 
-            industrial_time_display_industrial_time(current,event.subsecond,state->tick_frequency);
+            industrial_time_display_industrial_time(current, state->utc_time);
 
             industrial_time_check_battery_periodically(state, current);
 
@@ -170,16 +185,7 @@ bool industrial_time_face_loop(movement_event_t event, void *context) {
 
             break;
         case EVENT_ALARM_BUTTON_UP:
-            state->tick_frequency *= 2;
-            if (state->tick_frequency > INDUSTRIAL_TIME_MAX_SUBSECONDS) {
-                state->tick_frequency = 1;
-            }
-            movement_request_tick_frequency(state->tick_frequency);
-#if __EMSCRIPTEN__
-    char logbuf[40];
-    snprintf( logbuf, sizeof(logbuf), "Change tick frequency to %d", state->tick_frequency);
-    emscripten_log(EM_LOG_CONSOLE, logbuf);
-#endif
+            state->utc_time = ! state->utc_time;
             break;
         case EVENT_ALARM_LONG_PRESS:
             break;
@@ -197,8 +203,6 @@ bool industrial_time_face_loop(movement_event_t event, void *context) {
 
 void industrial_time_face_resign(void *context) {
     (void) context;
-    // restore default TICK frequency
-    movement_request_tick_frequency(1);
 }
 
 movement_watch_face_advisory_t industrial_time_face_advise(void *context) {

@@ -35,15 +35,16 @@
 /*
  * INDUSTRIAL_TIME FACE
  *
- * Displays the current time as Industrial time (aka decimal time)
+ * Displays the current time as Industrial time (aka decimal time) in the format "HH:mm".
  *
  *   ref. https://www.reiner-sct.com/en/time-recording/industrial-time-definition-calculation-at-a-glance/
+ *
+ * The face is signified by the letters "In" in the bottom left time digits.
+ * The Alarm button toggles between Local Time ("LoT"/"Lt") and UTC ("UTC"/Ut").
  *
  */
 
 #include "movement.h"
-
-#define INDUSTRIAL_TIME_MAX_SUBSECONDS 8
 
 typedef struct {
     struct {
@@ -53,7 +54,7 @@ typedef struct {
     uint8_t watch_face_index;
     bool time_signal_enabled;
     bool battery_low;
-    uint8_t tick_frequency;
+    bool utc_time;
 } industrial_time_state_t;
 
 void industrial_time_face_setup(uint8_t watch_face_index, void ** context_ptr);
