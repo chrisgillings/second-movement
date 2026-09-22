@@ -536,12 +536,19 @@ static double sun_transits_display_all(double julian_now_date_exact) {
         next_transit_date.unit.year+20
     );
 
-watch_set_decimal_if_available();
+    watch_set_decimal_if_available();
     watch_display_transit_event_text(next_transit_longitude);
-
-    // watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, custom_text, classic_text);
-    // watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
     watch_display_text(WATCH_POSITION_BOTTOM, buf + 2);
+
+    // show Bell indicator if today is the next transit
+    watch_date_time_t now_date_time = movement_get_local_date_time();
+    if (now_date_time.unit.year == next_transit_date.unit.year &&
+        now_date_time.unit.month == next_transit_date.unit.month &&
+        now_date_time.unit.day == next_transit_date.unit.day) {
+        watch_set_indicator(WATCH_INDICATOR_BELL);
+    } else {
+        watch_clear_indicator(WATCH_INDICATOR_BELL);
+    }
 
     return next_transit_julian_date;
 }

@@ -67,6 +67,9 @@
  * movement of the sun between high latitudes and low latitudes
  * throughout the course of the year.
  *
+ * If today is the date of a displayed transit, the Bell indicator
+ * is energised to alert the user to the fact.
+ *
  */
 
 #include "movement.h"
