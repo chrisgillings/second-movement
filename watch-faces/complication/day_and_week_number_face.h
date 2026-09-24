@@ -35,7 +35,8 @@
 /*
  * DAY_AND_WEEK_NUMBER FACE
  *
- * Displays the current week and day number for the year
+ * Displays the current week and day number for the year in the lower digits as 'ndddww'.
+ * The upper digits show the weekday and the month day number.
  *
  */
 
@@ -45,10 +46,7 @@ typedef struct {
     struct {
         watch_date_time_t previous;
     } date_time;
-    uint8_t last_battery_check;
     uint8_t watch_face_index;
-    bool time_signal_enabled;
-    bool battery_low;
 } day_and_week_number_face_state_t;
 
 void day_and_week_number_face_setup(uint8_t watch_face_index, void ** context_ptr);
